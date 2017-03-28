@@ -12,10 +12,16 @@ var parseJSON = function(json) {
 
   var digested = digest(json);
   var result = digested.val;
-
+  json = digested.json;
+  
   if ( digested.t === 'array'){
   	// split somehow and get it's elements
+  	var element;
 
+ 	while (json) {
+ 		[element, json] = getValue(json);
+ 		result.push(element);
+ 	}
   } 
 
   else if ( digested.t === 'object' ){
@@ -23,26 +29,54 @@ var parseJSON = function(json) {
   	// grab the keys and values
   	// digest each
   	var key;
-  	// keys will be string up to first :
-  	[key, json] = getKey(json);
-  	// update str
+  	var value;
 
-  	// value will be string up to ,
+  	while (json && json.indexOf(':') !== -1) {
+	  	// keys will be string up to first :
+	  	[key, json] = getKey(json);
+	  	// update str
+	  	// value will be string up to ,
+	  	[value, json] = getValue(json);
+  		result[key] = value;
+	}
 
-
+  } else if (digested.t === 'string') {
+  		// not needed
   }
-  
 
+  console.log("result: " + result);
+  console.log("result stringified: " + JSON.stringify(result));
+  console.log("")
+  return result;
 };
 
 var getKey = function(json){
 	// gets the key
 	// updates json
 	var colon = json.indexOf(':');
-	key = json.slice(0,colon);
+	var key = json.slice(0,colon);
+	key = parseJSON(key);
 	json = json.slice(colon+1);
 
 	return [ key, json ];
+}
+
+var getValue = function(json) {
+	// gets the value
+	// updates json
+	var comma = json.indexOf(',');
+	var value;
+	if (comma === -1) {
+		console.log('no commas', json);
+		value = json;
+		json = null;
+	} else {
+		console.log('else', json)
+		value = json.slice(0, comma);
+		json = json.slice(comma + 1);
+	}
+
+	return [ value, json ];
 }
 
 var digest = function(json){
@@ -54,21 +88,22 @@ var digest = function(json){
 	if ( first === '['){
 		// its array
 		result = [];
-		json = json.slice(1, json.length);
+		json = json.slice(1, json.length - 1);
 		t = "array";
 	}
 
 	else if ( first === '{'){
 		//  object
 		result = {};
-		json = json.slice(1, json.length);
+		json = json.slice(1, json.length - 1);
 		t = "object";
 	}
 
 	else if ( first === '"' ){
 		// string
-		result = '"' + json + '"';
-		json = json.slice(1, json.length);
+		// result = '"' + json + '"';
+		result = json;//.slice(1, json.length -1);
+		json = null;
 		t = "string";
 	}
 
